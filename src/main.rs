@@ -4,23 +4,23 @@ mod time;
 mod utils;
 
 use app::App;
-use setup::TerminalControl;
+use setup::terminal_setup;
 use time::Timer;
 use utils::count_spaces;
 
 fn main() {
-    let terminal_setup = TerminalControl::start();
+    let terminal_setup = terminal_setup();
 
     let text = setup::get_text();
 
     let mut app = App::new(&text);
 
     if let Err(e) = app.run() {
-        terminal_setup.stop();
+        terminal_setup.reset();
 
         eprintln!("{e}");
     } else {
-        terminal_setup.stop();
+        terminal_setup.reset();
 
         println!(
             "Words / min:\t{:.1}\nAccuracy:\t{:.1} %",

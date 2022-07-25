@@ -29,9 +29,9 @@ pub fn terminal_setup() -> TerminalControl {
 
 impl TerminalControl {
     pub fn reset(self) {
+        disable_raw_mode().expect("Failed to disable raw mode");
         execute!(stdout(), terminal::LeaveAlternateScreen)
             .expect("Failed to do closing terminal actions");
-        disable_raw_mode().expect("Failed to disable raw mode");
     }
 }
 

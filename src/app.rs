@@ -1,8 +1,7 @@
-use std::{
-    io::{stdout, StdoutLock, Write},
-    time::Duration,
+use crate::{
+    time::Timer,
+    utils::{self, count_spaces, word_wrap_keep_space},
 };
-
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyModifiers},
@@ -10,16 +9,16 @@ use crossterm::{
     style::{Color, SetBackgroundColor, SetForegroundColor},
     terminal::{self, ClearType},
 };
-
-use crate::{
-    time::Timer,
-    utils::{self, count_spaces, word_wrap_keep_space},
+use std::{
+    io::{stdout, StdoutLock, Write},
+    ops::ControlFlow,
+    time::Duration,
 };
 
 /// How many lines do the bottom info texts take
 const INFO_HEIGHT: usize = 3;
 
-/// Used for initialization of a variable in App::draw_text()
+/// Used for initialization of a variable in `App::draw_text`
 static EMPTY_STRING: String = String::new();
 
 pub struct App<'a> {
@@ -165,30 +164,13 @@ impl<'a> App<'a> {
             self.draw(&mut stdout)?;
             if event::poll(Duration::from_millis(500))? {
                 match event::read()? {
-                    Event::Key(key_event) => match key_event.code {
-                        KeyCode::Char(c) => {
-                            if key_event.modifiers.contains(KeyModifiers::CONTROL) {
-                                if c == 'q' {
-                                    break;
-                                }
-                            } else {
-                                self.typed.push(c);
-                                if self.typed.chars().count() == self.text.chars().count() {
-                                    break;
-                                }
-                            }
+                    Event::Key(key_event) => {
+                        if let ControlFlow::Break(_) = self.handle_char_typed(key_event) {
+                            break;
                         }
-
-                        KeyCode::Backspace => {
-                            self.typed.pop();
-                        }
-
-                        _ => (),
-                    },
+                    }
                     Event::Resize(width, h) => {
-                        self.wrapped = utils::word_wrap_keep_space(self.text, width as usize);
-                        self.terminal_height = h;
-                        queue!(stdout, terminal::Clear(ClearType::All))?;
+                        self.handle_resize(width, h, &mut stdout)?;
                     }
                     _ => (),
                 }
@@ -196,6 +178,42 @@ impl<'a> App<'a> {
             self.set_current_line();
         }
         Ok(())
+    }
+
+    fn handle_resize(
+        &mut self,
+        width: u16,
+        h: u16,
+        stdout: &mut StdoutLock,
+    ) -> Result<(), std::io::Error> {
+        self.wrapped = utils::word_wrap_keep_space(self.text, width as usize);
+        self.terminal_height = h;
+        queue!(stdout, terminal::Clear(ClearType::All))?;
+        Ok(())
+    }
+
+    fn handle_char_typed(&mut self, key_event: event::KeyEvent) -> ControlFlow<()> {
+        match key_event.code {
+            KeyCode::Char(c) => {
+                if key_event.modifiers.contains(KeyModifiers::CONTROL) {
+                    if c == 'q' {
+                        return ControlFlow::Break(());
+                    }
+                } else {
+                    self.typed.push(c);
+                    if self.typed.chars().count() == self.text.chars().count() {
+                        return ControlFlow::Break(());
+                    }
+                }
+            }
+
+            KeyCode::Backspace => {
+                self.typed.pop();
+            }
+
+            _ => (),
+        }
+        ControlFlow::Continue(())
     }
 
     fn set_current_line(&mut self) {
@@ -219,7 +237,7 @@ impl<'a> App<'a> {
         &self.typed
     }
 
-    pub fn timer_ref(&self) -> &Timer {
+    pub const fn timer_ref(&self) -> &Timer {
         &self.timer
     }
 }

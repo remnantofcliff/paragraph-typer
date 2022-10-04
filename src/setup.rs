@@ -15,7 +15,7 @@ struct Paragraph {
 
 pub struct TerminalControl;
 
-pub fn terminal_setup() -> TerminalControl {
+pub fn terminal() -> TerminalControl {
     enable_raw_mode().expect("Failed to enable raw mode");
 
     queue!(

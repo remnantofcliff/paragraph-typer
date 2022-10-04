@@ -4,24 +4,23 @@ mod time;
 mod utils;
 
 use app::App;
-use setup::terminal_setup;
 use time::Timer;
 use utils::count_spaces;
 
 fn main() {
-    let terminal_setup = terminal_setup();
+    let terminal_setup = setup::terminal();
 
     let text = setup::get_text();
 
     let mut app = App::new(&text);
 
-    if let Err(e) = app.run() {
-        terminal_setup.reset();
+    let result = app.run();
 
+    terminal_setup.reset();
+
+    if let Err(e) = result {
         eprintln!("{e}");
     } else {
-        terminal_setup.reset();
-
         println!(
             "Words / min:\t{:.1}\nAccuracy:\t{:.1} %",
             calculate_wpm(&text, app.typed_ref(), app.timer_ref()),

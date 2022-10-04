@@ -12,8 +12,8 @@ panic = "abort"
 strip = true
 
 [dependencies]
-crossterm = "0.24.0"
+crossterm = "0.25.0"
 rand = "0.8.5"
-serde = { version = "1.0.139", features = ["derive"] }
+serde = { version = "1.0.144", features = ["derive"] }
 unicode-width = "0.1.9"
 ureq = { version = "2.5.0", features = ["json"] }
